@@ -43,6 +43,7 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.MultiRec
 import org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.RecipeData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.SmithingTransformRecipeData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.descriptor.DefaultDescriptor;
+import org.cloudburstmc.protocol.bedrock.data.inventory.descriptor.InvalidDescriptor;
 import org.cloudburstmc.protocol.bedrock.data.inventory.descriptor.ItemDescriptorWithCount;
 import org.cloudburstmc.protocol.bedrock.packet.CraftingDataPacket;
 import org.geysermc.geyser.inventory.recipe.GeyserRecipe;
@@ -107,10 +108,12 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                     }
 
                     for (ItemDescriptorWithCount[] inputs : inputCombinations) {
-                        UUID uuid = UUID.randomUUID();
-                        craftingDataPacket.getCraftingData().add(org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.ShapelessRecipeData.shapeless(uuid.toString(),
+                        if (Arrays.stream(inputs).noneMatch(it -> (it.getDescriptor() instanceof InvalidDescriptor))) {
+                            UUID uuid = UUID.randomUUID();
+                            craftingDataPacket.getCraftingData().add(org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.ShapelessRecipeData.shapeless(uuid.toString(),
                                 Arrays.asList(inputs), Collections.singletonList(output), uuid, "crafting_table", 0, netId));
-                        recipeMap.put(netId++, new GeyserShapelessRecipe(shapelessRecipeData));
+                            recipeMap.put(netId++, new GeyserShapelessRecipe(shapelessRecipeData));
+                        }
                     }
                 }
                 case CRAFTING_SHAPED -> {
@@ -127,11 +130,13 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                         continue;
                     }
                     for (ItemDescriptorWithCount[] inputs : inputCombinations) {
-                        UUID uuid = UUID.randomUUID();
-                        craftingDataPacket.getCraftingData().add(org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.ShapedRecipeData.shaped(uuid.toString(),
+                        if (Arrays.stream(inputs).noneMatch(it -> it.getDescriptor() instanceof InvalidDescriptor)) {
+                            UUID uuid = UUID.randomUUID();
+                            craftingDataPacket.getCraftingData().add(org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.ShapedRecipeData.shaped(uuid.toString(),
                                 shapedRecipeData.getWidth(), shapedRecipeData.getHeight(), Arrays.asList(inputs),
                                 Collections.singletonList(output), uuid, "crafting_table", 0, netId));
-                        recipeMap.put(netId++, new GeyserShapedRecipe(shapedRecipeData));
+                            recipeMap.put(netId++, new GeyserShapedRecipe(shapedRecipeData));
+                        }
                     }
                 }
                 case STONECUTTING -> {
@@ -196,7 +201,7 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                 ItemDescriptorWithCount descriptor = ItemDescriptorWithCount.fromItem(input);
                 ItemStack javaOutput = stoneCuttingData.getResult();
                 ItemData output = ItemTranslator.translateToBedrock(session, javaOutput);
-                if (input.equals(ItemData.AIR) || output.equals(ItemData.AIR)) {
+                if (input.getNetId() == 0 || output.getNetId() == 0 || input.equals(ItemData.AIR) || output.equals(ItemData.AIR)) {
                     // Probably modded items
                     continue;
                 }

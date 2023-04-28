@@ -93,7 +93,7 @@ public final class ItemTranslator {
 
     @Nonnull
     public static ItemData translateToBedrock(GeyserSession session, ItemStack stack) {
-        if (stack == null) {
+        if (stack == null || stack.getId() == 0) {
             return ItemData.AIR;
         }
 
