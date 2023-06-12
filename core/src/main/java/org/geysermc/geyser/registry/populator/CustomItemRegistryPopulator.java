@@ -30,8 +30,8 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.nbt.NbtMapBuilder;
 import org.cloudburstmc.nbt.NbtType;
-import org.cloudburstmc.protocol.bedrock.data.defintions.ItemDefinition;
-import org.cloudburstmc.protocol.bedrock.data.defintions.SimpleItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
+import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ComponentItemData;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.item.custom.CustomItemData;
@@ -98,10 +98,10 @@ public class CustomItemRegistryPopulator {
         }
     }
 
-    public static GeyserCustomMappingData registerCustomItem(String customItemName, GeyserMappingItem javaItem, CustomItemData customItemData, int bedrockId) {
+    public static GeyserCustomMappingData registerCustomItem(String customItemName, Item javaItem, GeyserMappingItem mapping, CustomItemData customItemData, int bedrockId) {
         ItemDefinition itemDefinition = new SimpleItemDefinition(customItemName, bedrockId, true);
 
-        NbtMapBuilder builder = createComponentNbt(customItemData, javaItem, customItemName, bedrockId);
+        NbtMapBuilder builder = createComponentNbt(customItemData, javaItem, mapping, customItemName, bedrockId);
         ComponentItemData componentItemData = new ComponentItemData(customItemName, builder.build());
 
         return new GeyserCustomMappingData(componentItemData, itemDefinition, customItemName, bedrockId);
@@ -159,7 +159,7 @@ public class CustomItemRegistryPopulator {
         return new NonVanillaItemRegistration(componentItemData, item, customItemMapping);
     }
 
-    private static NbtMapBuilder createComponentNbt(CustomItemData customItemData, GeyserMappingItem mapping,
+    private static NbtMapBuilder createComponentNbt(CustomItemData customItemData, Item javaItem, GeyserMappingItem mapping,
                                                     String customItemName, int customItemId) {
         NbtMapBuilder builder = NbtMap.builder();
         builder.putString("name", customItemName)
@@ -168,7 +168,7 @@ public class CustomItemRegistryPopulator {
         NbtMapBuilder itemProperties = NbtMap.builder();
         NbtMapBuilder componentBuilder = NbtMap.builder();
 
-        setupBasicItemInfo(mapping.getMaxDamage(), mapping.getStackSize(), mapping.getToolType() != null || customItemData.displayHandheld(), customItemData, itemProperties, componentBuilder);
+        setupBasicItemInfo(javaItem.maxDamage(), javaItem.maxStackSize(), mapping.getToolType() != null || customItemData.displayHandheld(), customItemData, itemProperties, componentBuilder);
 
         boolean canDestroyInCreative = true;
         if (mapping.getToolType() != null) { // This is not using the isTool boolean because it is not just a render type here.
@@ -238,6 +238,14 @@ public class CustomItemRegistryPopulator {
             computeArmorProperties(armorType, customItemData.protectionValue(), componentBuilder);
         }
 
+        if (customItemData.isEdible()) {
+            computeConsumableProperties(itemProperties, componentBuilder, 1, customItemData.canAlwaysEat());
+        }
+
+        if (customItemData.isChargeable()) {
+            computeChargeableProperties(itemProperties, componentBuilder);
+        }
+
         computeRenderOffsets(isHat, customItemData, componentBuilder);
 
         if (creativeGroup != null) {
@@ -245,6 +253,10 @@ public class CustomItemRegistryPopulator {
         }
         if (creativeCategory.isPresent()) {
             itemProperties.putInt("creative_category", creativeCategory.getAsInt());
+        }
+
+        if (customItemData.isFoil()) {
+            itemProperties.putBoolean("foil", true);
         }
 
         componentBuilder.putCompound("item_properties", itemProperties.build());
