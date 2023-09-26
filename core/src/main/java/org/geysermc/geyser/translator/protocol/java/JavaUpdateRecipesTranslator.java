@@ -218,7 +218,7 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                 ItemDescriptorWithCount descriptor = ItemDescriptorWithCount.fromItem(input);
                 ItemStack javaOutput = stoneCuttingData.getResult();
                 ItemData output = ItemTranslator.translateToBedrock(session, javaOutput);
-                if (input.getNetId() == 0 || !input.isValid() || !output.isValid()) {
+                if (input.getNetId() == 0 || output.getNetId() == 0 || !input.isValid() || !output.isValid()) {
                    // Probably modded items
                     continue;
                 }
