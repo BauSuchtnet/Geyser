@@ -43,6 +43,7 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.MultiRec
 import org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.RecipeData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.SmithingTrimRecipeData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.descriptor.DefaultDescriptor;
+import org.cloudburstmc.protocol.bedrock.data.inventory.descriptor.InvalidDescriptor;
 import org.cloudburstmc.protocol.bedrock.data.inventory.descriptor.ItemDescriptorWithCount;
 import org.cloudburstmc.protocol.bedrock.data.inventory.descriptor.ItemTagDescriptor;
 import org.cloudburstmc.protocol.bedrock.packet.CraftingDataPacket;
@@ -134,6 +135,9 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
 
                     List<String> bedrockRecipeIDs = new ArrayList<>();
                     for (ItemDescriptorWithCount[] inputs : inputCombinations) {
+                        if (Arrays.stream(inputs).anyMatch(it -> (it.getDescriptor() instanceof InvalidDescriptor))) {
+                            continue;
+                        }
                         UUID uuid = UUID.randomUUID();
                         bedrockRecipeIDs.add(uuid.toString());
                         craftingDataPacket.getCraftingData().add(org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.ShapelessRecipeData.shapeless(uuid.toString(),
@@ -158,6 +162,9 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
 
                     List<String> bedrockRecipeIDs = new ArrayList<>();
                     for (ItemDescriptorWithCount[] inputs : inputCombinations) {
+                        if (Arrays.stream(inputs).anyMatch(it -> (it.getDescriptor() instanceof InvalidDescriptor))) {
+                            continue;
+                        }
                         UUID uuid = UUID.randomUUID();
                         bedrockRecipeIDs.add(uuid.toString());
                         craftingDataPacket.getCraftingData().add(org.cloudburstmc.protocol.bedrock.data.inventory.crafting.recipe.ShapedRecipeData.shaped(uuid.toString(),
